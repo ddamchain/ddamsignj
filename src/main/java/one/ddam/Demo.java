@@ -25,10 +25,10 @@ public class Demo {
         tx.setValue(new BigInteger("10000000000"));
 
         // 账户密钥对
-        ECKeyPair kp1 = Signer.skToKeyPair("0x97ddae0f3a25b92268175400149d65d6887b9cefaf28ea2c078e05cdc15a3c0a");
-        ECKeyPair kp2 = Signer.skToKeyPair("0x39bde506f23bffbab83e4b7187f6f90ee1fe5d990b80af636633febc1463f85d");
-        ECKeyPair kp3 = Signer.skToKeyPair("0x6c16b3d2eff3932cb9ffdb4a750ff040afa5a2a031d61538bb503e9f2c3dc82d");
-        ECKeyPair kp4 = Signer.skToKeyPair("0x91b2db997e91ebc64f45fb70df9b09cd808aac520934b1a12dc1b52241745f5b");
+        ECKeyPair kp1 = Signer.skToKeyPair("0x01");
+        ECKeyPair kp2 = Signer.skToKeyPair("0x02");
+        ECKeyPair kp3 = Signer.skToKeyPair("0x03");
+        ECKeyPair kp4 = Signer.skToKeyPair("0x04");
 
         log.info("PrivateKey1: {}, Address1: {}, Sign1: {}", Signer.exportKey(kp1), Signer.getAddress(kp1), Signer.sign(kp1, tx));
         log.info("PrivateKey2: {}, Address2: {}, Sign2: {}", Signer.exportKey(kp2), Signer.getAddress(kp2), Signer.sign(kp2, tx));
