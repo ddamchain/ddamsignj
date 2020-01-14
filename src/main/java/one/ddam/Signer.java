@@ -1,6 +1,7 @@
 package one.ddam;
 
 import java.math.BigInteger;
+import java.security.SignatureException;
 
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
@@ -58,8 +59,11 @@ public class Signer {
 
     public static String getAddress(String sk) {
         byte[] input = skToPk(sk);
-        byte[] address = sha3Sum256Digest(input);
+        return getAddress(input);
+    }
 
+    public static String getAddress(byte[] input) {
+        byte[] address = sha3Sum256Digest(input);
         return "DD" + Hex.toHexString(address);
     }
 
@@ -88,5 +92,42 @@ public class Signer {
         System.arraycopy(v, 0, result, r.length + s.length, v.length);
 
         return Numeric.toHexString(result);
+    }
+
+    public static Sign.SignatureData sign(ECKeyPair keyPair, byte[] txHash) {
+        return Sign.signMessage(txHash, keyPair, false);
+    }
+
+    public static Sign.SignatureData hexToSign(String hex) {
+        byte[] bytes = Hex.decode(Numeric.cleanHexPrefix(hex));
+
+        byte[] r = new byte[32];
+        byte[] s = new byte[32];
+        byte[] v = new byte[1];
+
+        System.arraycopy(bytes,  0, r, 0, r.length);
+        System.arraycopy(bytes, 32, s, 0, s.length);
+        System.arraycopy(bytes, 64, v, 0, v.length);
+
+        byte realV = (byte) (new BigInteger(v).intValue() + 27);
+        return new Sign.SignatureData(new byte[]{ realV }, r, s);
+    }
+
+    public static String getSource(byte[] messageHash, Sign.SignatureData signatureData) throws SignatureException {
+        BigInteger bi = Sign.signedMessageHashToKey(messageHash, signatureData);
+        byte[] pk = Numeric.toBytesPadded(bi, 64);
+
+        byte[] a = new byte[32];
+        byte[] b = new byte[32];
+
+        System.arraycopy(pk, pk.length - 32, b, 0, b.length);
+        System.arraycopy(pk, pk.length - 64, a, 0, a.length);
+
+        byte[] x = Bytes.trimLeadingZeroes(a);
+        byte[] y = Bytes.trimLeadingZeroes(b);
+
+        byte[] input = java.util.Arrays.copyOf(x, x.length + y.length);
+        System.arraycopy(y, 0, input, x.length, y.length);
+        return getAddress(input);
     }
 }

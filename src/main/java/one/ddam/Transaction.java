@@ -1,11 +1,13 @@
 package one.ddam;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 
 import org.web3j.crypto.Hash;
+import org.web3j.crypto.Sign;
 import org.web3j.utils.Numeric;
-import org.web3j.utils.Strings;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -19,7 +21,47 @@ public class Transaction {
     @Getter @Setter private BigInteger gasLimit = new BigInteger("3000");
     @Getter @Setter private BigInteger gasPrice = new BigInteger("500");
     @Getter @Setter private Byte type = 0;
-    @Getter @Setter private byte[] data = new byte[0];
+    @Getter @Setter private byte[] data = null;
+    @Getter @Setter private Sign.SignatureData sign = null;
+
+    public static String serializeTx(Transaction tx, String sign) {
+        return "\"{"
+                    + "\\\"target\\\": \\\"" + tx.getTarget() + "\\\","
+                    + "\\\"value\\\": " + tx.getValue().longValue() + ","
+                    + "\\\"nonce\\\": " + tx.getNonce().longValue() + ","
+                    + "\\\"gas\\\":" + tx.getGasLimit().longValue() + ","
+                    + "\\\"gasprice\\\":" + tx.getGasPrice().longValue() + ","
+                    + "\\\"tx_type\\\":" + tx.getType().intValue() + ","
+                    + "\\\"data\\\": " + Arrays.toString(tx.getData()) + ","
+                    + "\\\"sign\\\": \\\"" + sign + "\\\""
+                + "}\"";
+    }
+
+    public static Transaction unSerializeTx(String info) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Transaction tx = new Transaction();
+
+        JsonNode json = objectMapper.readTree(info);
+        json = objectMapper.readTree(json.asText());
+
+        String target = json.findValue("target").asText();
+        BigInteger value = BigInteger.valueOf(json.findValue("value").asLong());
+        BigInteger nonce = BigInteger.valueOf(json.findValue("nonce").asLong());
+        BigInteger gasLimit = BigInteger.valueOf(json.findValue("gas").asLong());
+        BigInteger gasPrice = BigInteger.valueOf(json.findValue("gasprice").asLong());
+        byte type = (byte) json.findValue("tx_type").asInt();
+        String sign = json.findValue("sign").asText();
+
+        tx.setTarget(target);
+        tx.setValue(value);
+        tx.setNonce(nonce);
+        tx.setGasLimit(gasLimit);
+        tx.setGasPrice(gasPrice);
+        tx.setType(type);
+        tx.setSign(Signer.hexToSign(sign));
+
+        return tx;
+    }
 
     private static byte[] encode(byte[] bytesValue) {
         byte[] result = new byte[bytesValue.length + 4];
@@ -49,7 +91,12 @@ public class Transaction {
         result = concat(result, encode(gasLimit.toByteArray()));
         result = concat(result, encode(gasPrice.toByteArray()));
         result = concat(result, new byte[]{type});
-        result = concat(result, encode(data));
+        if (data != null) {
+            result = concat(result, encode(data));
+        }
+        else {
+            result = concat(result, encode(new byte[0]));
+        }
 
         return Hash.sha256(result);
     }

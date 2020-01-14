@@ -7,10 +7,10 @@ import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Sign;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Objects;
 
 public class Demo {
@@ -54,7 +54,7 @@ public class Demo {
                 + "\"jsonrpc\": \"2.0\","
                 + "\"id\": 1,"
                 + "\"params\": [\""
-                + Signer.getAddress(src)
+                    + Signer.getAddress(src)
                 + "\"]"
                 + "}";
 
@@ -69,7 +69,7 @@ public class Demo {
         tx.setGasPrice(BigInteger.valueOf(500));
         tx.setNonce(BigInteger.valueOf(nonce));
         tx.setType((byte) 0);
-        tx.setData("helloworld".getBytes());
+        tx.setSign(Signer.sign(src, tx.genHash()));
 
         // 生成签名
         String sign = Signer.sign(src, tx);
@@ -81,24 +81,35 @@ public class Demo {
                 tx.getData(),
                 sign);
 
+        // 反序列化签名
+        Sign.SignatureData signData = Signer.hexToSign(sign);
+        log.info("hex to Sign.SignatureData: {}", signData.equals(tx.getSign()));
+
+        // 恢复公钥
+        log.info("recover address: get={}, want={}", Signer.getSource(tx.genHash(), signData), Signer.getAddress(src));
+
+        // 序列化交易
+        String sendTx = Transaction.serializeTx(tx, sign);
+
+        // 反序列化交易
+        Transaction rawTx = Transaction.unSerializeTx(sendTx);
+        log.info("Unserialize transaction:\ntarget: {}\nvalue: {}\nnonce: {}\ntype: {}\ndata: {}\nsource: {}",
+                rawTx.getTarget(),
+                rawTx.getValue(),
+                rawTx.getNonce(),
+                rawTx.getType(),
+                rawTx.getData(),
+                Signer.getSource(rawTx.genHash(), rawTx.getSign()));
+
         // 发送交易
-        String sendTx = "{"
+        String jsonrpc = "{"
                 + "\"method\": \"Gx_tx\","
                 + "\"jsonrpc\": \"2.0\","
                 + "\"id\": 1,"
-                + "\"params\": [\"{"
-                    + "\\\"target\\\": \\\"" + target + "\\\","
-                    + "\\\"value\\\": " + tx.getValue().longValue() + ","
-                    + "\\\"nonce\\\": " + tx.getNonce().longValue() + ","
-                    + "\\\"gas\\\":" + tx.getGasLimit().longValue() + ","
-                    + "\\\"gasprice\\\":" + tx.getGasPrice().longValue() + ","
-                    + "\\\"tx_type\\\":" + tx.getType().intValue() + ","
-                    + "\\\"data\\\": " + (tx.getData().length > 0 ? Arrays.toString(tx.getData()) : null) + ","
-                    + "\\\"sign\\\": \\\"" + sign + "\\\""
-                + "}\"]"
+                + "\"params\": [" + sendTx + "]"
                 + "}";
 
-        String result = demo.post(sendTx);
+        String result = demo.post(jsonrpc);
         JsonNode info = objectMapper.readTree(result);
 
         if (info.get("result").isObject() && !info.get("result").findValue("data").isNull()) {
@@ -107,6 +118,5 @@ public class Demo {
         else {
             log.error("tx result: {}", result);
         }
-
     }
 }

@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.web3j.crypto.ECKeyPair;
 
 import java.math.BigInteger;
+import java.security.SignatureException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -6175,15 +6176,21 @@ public class SignTransactionTest {
             "0x2710, DD0ae60853da655eb5ac10b5afb5869e29239699734ad6970ba85d6e8334c18452, 0x6281bc36a3cfad77dabc0240e00bc11507dd54706549a5d1033a9f94de47234150a5bd9884d4ada6a4b51ac5131db7e8b2c73632b93ee385cda97279747b0b6d00",
     })
     @DisplayName("Sign Transaction")
-    void signTransaction(String sk, String target, String want) {
+    void signTransaction(String sk, String target, String want) throws SignatureException {
         Transaction tx = new Transaction();
         tx.setTarget(target);
         tx.setValue(new BigInteger("24460000000"));
         tx.setGasPrice(new BigInteger("13333"));
 
         ECKeyPair keyPair = Signer.skToKeyPair(sk);
-        String got = Signer.sign(keyPair, tx);
+        String gotSign = Signer.sign(keyPair, tx);
 
-        assertEquals(want, got);
+        assertEquals(want, gotSign);
+
+        // 恢复公钥
+        String wantSourceAddress = Signer.getAddress(sk);
+        String gotSourceAddress = Signer.getSource(tx.genHash(), Signer.hexToSign(gotSign));
+
+        assertEquals(wantSourceAddress, gotSourceAddress);
     }
 }
