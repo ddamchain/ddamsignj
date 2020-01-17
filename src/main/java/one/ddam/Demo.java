@@ -39,6 +39,11 @@ public class Demo {
         Demo demo = new Demo();
         ObjectMapper objectMapper = new ObjectMapper();
 
+        // 校验地址
+        log.info("DDcec506e893f59e1e9a0f82fd20f8e54f47b5fc826800fdca93df217fe21f7fb6 is valid: {}", Utils.isAddress("DDcec506e893f59e1e9a0f82fd20f8e54f47b5fc826800fdca93df217fe21f7fb6"));
+        log.info("DDfb6916095ca1df60bb79ce92ce3ea74c37c5d359 is valid: {}", Utils.isAddress("DDfb6916095ca1df60bb79ce92ce3ea74c37c5d359"));
+        log.info("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359 is valid: {}", Utils.isAddress("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359"));
+
         // 生成目标账户
         ECKeyPair keyPair = Signer.genKeyPair();
         String target = Signer.getAddress(keyPair);
