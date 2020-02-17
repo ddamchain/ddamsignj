@@ -1,6 +1,7 @@
 package one.ddam;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.web3j.crypto.ECKeyPair;
@@ -6186,6 +6187,30 @@ public class SignTransactionTest {
         String gotSign = Signer.sign(keyPair, tx);
 
         assertEquals(want, gotSign);
+
+        // 恢复公钥
+        String wantSourceAddress = Signer.getAddress(sk);
+        String gotSourceAddress = Signer.getSource(tx.genHash(), Signer.hexToSign(gotSign));
+
+        assertEquals(wantSourceAddress, gotSourceAddress);
+    }
+
+    @Test
+    @DisplayName("Trim Byte Array Leading Zeroes")
+    void trimByteArrayLeadingZeroes() throws SignatureException {
+        String sk = "0xb0a938cee3ffab9c3483137c03d424fcafc98def9a6f0cda304ebc9dc9b9bdef";
+        Transaction tx = new Transaction();
+
+        tx.setTarget("DD5ef22ce2d3813cf2d4545886ce5c84500a8d46df3082e541489afc798dd6aeeb");
+        tx.setValue(new BigInteger("999000000000"));
+        tx.setGasLimit(BigInteger.valueOf(30000));
+        tx.setGasPrice(BigInteger.valueOf(5000));
+        tx.setNonce(BigInteger.valueOf(4));
+
+        ECKeyPair keyPair = Signer.skToKeyPair(sk);
+        String gotSign = Signer.sign(keyPair, tx);
+
+        assertEquals("0x10035782b0e39597e0362f52d68f0e56e0e7218731ef4757ead783ee6404861e0292fe01ab7be0b5882fad8b498561f62680bba1127533f7ebb71f855824cc0401", gotSign);
 
         // 恢复公钥
         String wantSourceAddress = Signer.getAddress(sk);

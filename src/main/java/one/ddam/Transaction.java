@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
+import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
 
 import java.math.BigInteger;
@@ -86,10 +87,10 @@ public class Transaction {
         BigInteger to = new BigInteger(target.substring(2), 16);
 
         result = concat(result, encode(Numeric.toBytesPadded(to, 32)));
-        result = concat(result, encode(value.toByteArray()));
-        result = concat(result, encode(nonce.toByteArray()));
-        result = concat(result, encode(gasLimit.toByteArray()));
-        result = concat(result, encode(gasPrice.toByteArray()));
+        result = concat(result, encode(Bytes.trimLeadingZeroes(value.toByteArray())));
+        result = concat(result, encode(Bytes.trimLeadingZeroes(nonce.toByteArray())));
+        result = concat(result, encode(Bytes.trimLeadingZeroes(gasLimit.toByteArray())));
+        result = concat(result, encode(Bytes.trimLeadingZeroes(gasPrice.toByteArray())));
         result = concat(result, new byte[]{type});
         if (data != null) {
             result = concat(result, encode(data));
